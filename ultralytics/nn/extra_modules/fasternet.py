@@ -69,10 +69,10 @@ class MLPBlock(nn.Module):
         mlp_hidden_dim = int(dim * mlp_ratio)
 
         mlp_layer: List[nn.Module] = [
-            nn.Conv2d(dim, mlp_hidden_dim, 1, bias=False),
+            nn.Conv2d(dim, mlp_hidden_dim, 1,groups=2, bias=False),
             norm_layer(mlp_hidden_dim),
             act_layer(),
-            nn.Conv2d(mlp_hidden_dim, dim, 1, bias=False)
+            nn.Conv2d(mlp_hidden_dim, dim, 1,groups=2, bias=False)
         ]
 
         self.mlp = nn.Sequential(*mlp_layer)
@@ -165,7 +165,7 @@ class PatchEmbed(nn.Module):
         x = self.norm(self.proj(x))
         return x
 
-
+########  Wavelet module
 class DW_down(nn.Module):
     def __init__(self, in_channel, out_channel):
         super().__init__()
@@ -184,6 +184,24 @@ class DW_down(nn.Module):
         #return self.act(torch.cat((x1, x2), 1))
         return x1
 
+
+class DW_down_reduce(nn.Module):
+    def __init__(self, in_channel, out_channel):
+        super().__init__()
+        self.dw = DWTForward(J=1, mode='zero', wave='haar')
+        #self.cv1 = DWConv(in_channel, in_channel, 3, 2, 1)
+        self.cv2 = Conv(in_channel*4, in_channel*2, 1,act=nn.ReLU())
+        self.act = nn.GELU()
+
+    def forward(self, x):
+        yL, yH = self.dw(x)
+        y_HL = yH[0][:, :, 0, ::]
+        y_LH = yH[0][:, :, 1, ::]
+        y_HH = yH[0][:, :, 2, ::]
+        x1 = torch.cat([yL, y_HL, y_LH, y_HH], dim=1)
+        #x2 = self.cv1(x)
+        #return self.act(torch.cat((x1, , 1))
+        return self.cv2(x1)
 
 # class DW_down(nn.Module):
 #     def __init__(self, in_channel, out_channel):
@@ -239,6 +257,27 @@ class DW_embedded(nn.Module):
     #     x2 = self.DW_path(x)
     #     return self.norm(self.combine_conv(torch.cat((x1, x2), dim=1)))
 
+
+class PatchMerging_DW(nn.Module):
+
+    def __init__(self, patch_size2, patch_stride2, dim, norm_layer):
+        super().__init__()
+        self.reduction = nn.Conv2d(int(dim/2), dim, kernel_size=patch_size2, stride=patch_stride2, bias=False)
+        self.dw_reduction = DW_down_reduce(int(dim/2), dim)
+        self.conv = DWConv(2*dim, 2*dim)
+        if norm_layer is not None:
+            self.norm = norm_layer(2 * dim)
+        else:
+            self.norm = nn.Identity()
+
+    def forward(self, x: Tensor) -> Tensor:
+        x1,x2 = torch.chunk(x, 2, dim=1)
+        x1 = self.reduction(x1)
+        x2 = self.dw_reduction(x2)
+        x = self.norm(self.conv(torch.cat((x1,x2), dim=1)))
+        return x
+
+########  Wavelet module
 
 class FasterNet_DWave(nn.Module):
     def __init__(self,
@@ -317,14 +356,31 @@ class FasterNet_DWave(nn.Module):
                                )
             stages_list.append(stage)
 
+
+            # if i_stage < self.num_stages - 1:
+            #     stages_list.append(
+            #         PatchMerging(patch_size2=patch_size2,
+            #                      patch_stride2=patch_stride2,
+            #                      dim=int(embed_dim * 2 ** i_stage),
+            #                      norm_layer=norm_layer)
+            #     )
+
             # patch merging layer
             if i_stage < self.num_stages - 1:
-                stages_list.append(
-                    PatchMerging(patch_size2=patch_size2,
-                                 patch_stride2=patch_stride2,
-                                 dim=int(embed_dim * 2 ** i_stage),
-                                 norm_layer=norm_layer)
-                )
+                if i_stage>=1:
+                    stages_list.append(
+                        PatchMerging(patch_size2=patch_size2,
+                                     patch_stride2=patch_stride2,
+                                     dim=int(embed_dim * 2 ** i_stage),
+                                     norm_layer=norm_layer)
+                    )
+                else:
+                    stages_list.append(
+                        PatchMerging_DW(patch_size2=patch_size2,
+                                        patch_stride2=patch_stride2,
+                                        dim=int(embed_dim * 2 ** i_stage),
+                                        norm_layer=norm_layer)
+                    )
 
         self.stages = nn.Sequential(*stages_list)
 
