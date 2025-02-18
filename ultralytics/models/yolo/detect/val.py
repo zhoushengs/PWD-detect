@@ -194,11 +194,20 @@ class DetectionValidator(BaseValidator):
             LOGGER.warning(f"WARNING ⚠️ no labels found in {self.args.task} set, can not compute metrics without labels")
 
         # Print results per class
-        if self.args.verbose and not self.training and self.nc > 1 and len(self.stats):
-            for i, c in enumerate(self.metrics.ap_class_index):
-                LOGGER.info(
-                    pf % (self.names[c], self.nt_per_image[c], self.nt_per_class[c], *self.metrics.class_result(i))
-                )
+        # if self.args.verbose and not self.training and self.nc > 1 and len(self.stats):
+        #     for i, c in enumerate(self.metrics.ap_class_index):
+        #         LOGGER.info(
+        #             pf % (self.names[c], self.nt_per_image[c], self.nt_per_class[c], *self.metrics.class_result(i))
+        #         )
+
+
+        # Print results per class for both training and validation
+        if self.args.verbose and self.nc > 1 and len(self.stats):
+            if not self.training or self.nc<=5:
+                for i, c in enumerate(self.metrics.ap_class_index):
+                    LOGGER.info(
+                        pf % (self.names[c], self.nt_per_image[c], self.nt_per_class[c], *self.metrics.class_result(i))
+                    )
 
         if self.args.plots:
             for normalize in True, False:
