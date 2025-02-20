@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --nodes 1
 #SBATCH --gres=gpu:1  # request a GPU
-#SBATCH --mem=80G      
-#SBATCH --tasks-per-node=2 
-#SBATCH --cpus-per-task=3
-#SBATCH --time=2:00:00
+#SBATCH --mem=40G      
+#SBATCH --tasks-per-node=1 
+#SBATCH --cpus-per-task=2
+#SBATCH --time=4:03:00
 #SBATCH --output=%j-fasternet_dw.out
 #SBATCH --account=def-xianyi
 
@@ -16,7 +16,7 @@ nvidia-smi
 echo "Job ID: $SLURM_JOB_ID"
 echo "starting training..."
 
-#python -u train_VisDrone.py
-python -u train_on_cc.py
+python -u train_VisDrone.py
+#python -u train_on_cc.py
 #python -u train_rtdetr.py       #   -m torch.distributed.run --nproc_per_node 3 train_rtdetr.py 
 #python -u -m torch.distributed.run --nproc_per_node 3 train_VisDrone.py

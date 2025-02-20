@@ -1,0 +1,105 @@
+
+Lmod is automatically replacing "intel/2020.1.217" with "gcc/9.3.0".
+
+Lmod Warning:
+-------------------------------------------------------------------------------
+The following dependent module(s) are not currently loaded: python/3.10.2
+(required by: ipykernel/2023b, scipy-stack/2023b)
+-------------------------------------------------------------------------------
+
+
+
+
+Due to MODULEPATH changes, the following have been reloaded:
+  1) mii/1.1.2
+
+The following have been reloaded with a version change:
+  1) StdEnv/2023 => StdEnv/2020
+  2) blis/0.9.0 => blis/0.8.1
+  3) flexiblas/3.3.1 => flexiblas/3.0.4
+  4) gcc/12.3 => gcc/9.3.0
+  5) gcccore/.12.3 => gcccore/.9.3.0
+  6) gentoo/2023 => gentoo/2020
+  7) libfabric/1.18.0 => libfabric/1.15.1
+  8) openmpi/4.1.5 => openmpi/4.0.3
+  9) ucx/1.14.1 => ucx/1.8.0
+
+Looking in links: /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2020/avx2, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo/avx2, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2020/generic, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo/generic, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic
+Requirement already satisfied: pip in /home/zimozhou/envs/yoloEnv/lib/python3.8/site-packages (24.2+computecanada)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/pip-25.0+computecanada-py3-none-any.whl
+Installing collected packages: pip
+  Attempting uninstall: pip
+    Found existing installation: pip 24.2+computecanada
+    Uninstalling pip-24.2+computecanada:
+      Successfully uninstalled pip-24.2+computecanada
+Successfully installed pip-25.0+computecanada
+Tue Feb 18 16:31:24 2025       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 550.144.03             Driver Version: 550.144.03     CUDA Version: 12.4     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A100-SXM4-40GB          Off |   00000000:01:00.0 Off |                    0 |
+| N/A   29C    P0             50W /  400W |       1MiB /  40960MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+Job ID: 40402336
+starting training...
+WARNING ⚠️ no model scale passed. Assuming scale='n'.
+2025-02-18 16:31:39
+Ultralytics 8.3.59 🚀 Python-3.8.10 torch-1.13.1+cu117 CUDA:0 (NVIDIA A100-SXM4-40GB, 40326MiB)
+WARNING ⚠️ Upgrade to torch>=2.0.0 for deterministic training.
+[34m[1mengine/trainer: [0mtask=detect, mode=train, model=ultralytics/cfg/models/v8/yolov8-fasternet.yaml, data=/home/zimozhou/RTDETR-main/dataset/1.yaml, epochs=300, time=None, patience=0, batch=64, imgsz=640, save=True, save_period=-1, cache=True, device=0, workers=12, project=runs/train, name=exp-faster_dw, exist_ok=False, pretrained=True, optimizer=AdamW, verbose=True, seed=20, deterministic=True, single_cls=False, rect=False, cos_lr=True, close_mosaic=10, resume=False, amp=False, fraction=1.0, profile=False, freeze=None, multi_scale=False, overlap_mask=True, mask_ratio=4, dropout=0.0, val=True, split=val, save_json=False, save_hybrid=False, conf=None, iou=0.7, max_det=300, half=False, dnn=False, plots=True, source=None, vid_stride=1, stream_buffer=False, visualize=False, augment=False, agnostic_nms=False, classes=None, retina_masks=False, embed=None, show=False, save_frames=False, save_txt=False, save_conf=False, save_crop=False, show_labels=True, show_conf=True, show_boxes=True, line_width=None, format=torchscript, keras=False, optimize=False, int8=False, dynamic=False, simplify=True, opset=None, workspace=None, nms=False, lr0=0.001, lrf=0.005, momentum=0.937, weight_decay=0.0005, warmup_epochs=10, warmup_momentum=0.8, warmup_bias_lr=0.0001, box=7.5, cls=0.5, dfl=1.5, pose=12.0, kobj=1.0, nbs=64, hsv_h=0.015, hsv_s=0.7, hsv_v=0.4, degrees=0.0, translate=0.1, scale=0.5, shear=0.0, perspective=0.0, flipud=0.0, fliplr=0.5, bgr=0.0, mosaic=1.0, mixup=0.0, copy_paste=0.0, copy_paste_mode=flip, auto_augment=randaugment, erasing=0.4, crop_fraction=1.0, cfg=None, tracker=botsort.yaml, save_dir=runs/train/exp-faster_dw
+Overriding model.yaml nc=80 with nc=2
+WARNING ⚠️ no model scale passed. Assuming scale='n'.
+
+                   from  n    params  module                                       arguments                     
+  0                  -1  1   1368100  fasternet_t0                                 []                            
+  1                  -1  1    215872  ultralytics.nn.modules.block.SPPF            [320, 256, 5]                 
+  2                  -1  1         0  torch.nn.modules.upsampling.Upsample         [None, 2, 'nearest']          
+  3             [-1, 3]  1         0  ultralytics.nn.modules.conv.Concat           [1]                           
+  4                  -1  1    152320  ultralytics.nn.modules.block.C2f             [416, 128, 1]                 
+  5                  -1  1         0  torch.nn.modules.upsampling.Upsample         [None, 2, 'nearest']          
+  6             [-1, 2]  1         0  ultralytics.nn.modules.conv.Concat           [1]                           
+  7                  -1  1     38272  ultralytics.nn.modules.block.C2f             [208, 64, 1]                  
+  8                  -1  1     36992  ultralytics.nn.modules.conv.Conv             [64, 64, 3, 2]                
+  9             [-1, 8]  1         0  ultralytics.nn.modules.conv.Concat           [1]                           
+ 10                  -1  1    123648  ultralytics.nn.modules.block.C2f             [192, 128, 1]                 
+ 11                  -1  1    147712  ultralytics.nn.modules.conv.Conv             [128, 128, 3, 2]              
+ 12             [-1, 5]  1         0  ultralytics.nn.modules.conv.Concat           [1]                           
+ 13                  -1  1    493056  ultralytics.nn.modules.block.C2f             [384, 256, 1]                 
+ 14        [11, 14, 17]  1    751702  ultralytics.nn.modules.head.Detect           [2, [64, 128, 256]]           
+YOLOv8-fasternet summary: 279 layers, 3,327,674 parameters, 3,327,658 gradients, 8.6 GFLOPs
+
+WARNING ⚠️ ClearML installed but not initialized correctly, not logging this run. It seems ClearML is not configured on this machine!
+To get started with ClearML, setup your own 'clearml-server' or create a free account at https://app.clear.ml
+Setup instructions can be found here: https://clear.ml/docs
+[34m[1mTensorBoard: [0mStart with 'tensorboard --logdir runs/train/exp-faster_dw', view at http://localhost:6006/
+Freezing layer 'model.14.dfl.conv.weight'
+[34m[1mtrain: [0mScanning /home/zimozhou/RTDETR-main/dataset/sicktree4yolo/train/labels.cache... 1652 images, 0 backgrounds, 0 corrupt: 100%|██████████| 1652/1652 [00:00<?, ?it/s][34m[1mtrain: [0mScanning /home/zimozhou/RTDETR-main/dataset/sicktree4yolo/train/labels.cache... 1652 images, 0 backgrounds, 0 corrupt: 100%|██████████| 1652/1652 [00:00<?, ?it/s]
+WARNING ⚠️ cache='ram' may produce non-deterministic training results. Consider cache='disk' as a deterministic alternative if your disk space allows.
+  0%|          | 0/1652 [00:00<?, ?it/s][34m[1mtrain: [0mCaching images (0.0GB RAM):   1%|          | 10/1652 [00:00<00:19, 84.19it/s][34m[1mtrain: [0mCaching images (0.0GB RAM):   2%|▏         | 31/1652 [00:00<00:13, 122.38it/s][34m[1mtrain: [0mCaching images (0.1GB RAM):   3%|▎         | 50/1652 [00:00<00:10, 145.77it/s][34m[1mtrain: [0mCaching images (0.1GB RAM):   8%|▊         | 126/1652 [00:00<00:04, 357.91it/s][34m[1mtrain: [0mCaching images (0.2GB RAM):  12%|█▏        | 194/1652 [00:00<00:03, 459.38it/s][34m[1mtrain: [0mCaching images (0.3GB RAM):  15%|█▌        | 254/1652 [00:00<00:02, 486.49it/s][34m[1mtrain: [0mCaching images (0.4GB RAM):  19%|█▊        | 309/1652 [00:00<00:02, 492.06it/s][34m[1mtrain: [0mCaching images (0.4GB RAM):  23%|██▎       | 376/1652 [00:00<00:02, 544.21it/s][34m[1mtrain: [0mCaching images (0.5GB RAM):  27%|██▋       | 446/1652 [00:01<00:02, 580.51it/s][34m[1mtrain: [0mCaching images (0.6GB RAM):  31%|███       | 510/1652 [00:01<00:01, 577.04it/s][34m[1mtrain: [0mCaching images (0.7GB RAM):  34%|███▍      | 569/1652 [00:01<00:01, 551.77it/s][34m[1mtrain: [0mCaching images (0.7GB RAM):  38%|███▊      | 629/1652 [00:01<00:01, 559.99it/s][34m[1mtrain: [0mCaching images (0.8GB RAM):  42%|████▏     | 686/1652 [00:01<00:01, 555.98it/s][34m[1mtrain: [0mCaching images (0.9GB RAM):  45%|████▌     | 745/1652 [00:01<00:01, 565.56it/s][34m[1mtrain: [0mCaching images (0.9GB RAM):  49%|████▊     | 802/1652 [00:01<00:01, 544.20it/s][34m[1mtrain: [0mCaching images (1.0GB RAM):  52%|█████▏    | 859/1652 [00:01<00:01, 544.74it/s][34m[1mtrain: [0mCaching images (1.0GB RAM):  55%|█████▌    | 914/1652 [00:01<00:01, 529.33it/s][34m[1mtrain: [0mCaching images (1.1GB RAM):  59%|█████▊    | 969/1652 [00:01<00:01, 528.95it/s][34m[1mtrain: [0mCaching images (1.2GB RAM):  62%|██████▏   | 1023/1652 [00:02<00:01, 517.53it/s][34m[1mtrain: [0mCaching images (1.2GB RAM):  66%|██████▌   | 1086/1652 [00:02<00:01, 543.91it/s][34m[1mtrain: [0mCaching images (1.3GB RAM):  69%|██████▉   | 1141/1652 [00:02<00:00, 519.79it/s][34m[1mtrain: [0mCaching images (1.4GB RAM):  72%|███████▏  | 1196/1652 [00:02<00:00, 518.04it/s][34m[1mtrain: [0mCaching images (1.4GB RAM):  76%|███████▌  | 1248/1652 [00:02<00:00, 516.28it/s][34m[1mtrain: [0mCaching images (1.5GB RAM):  79%|███████▉  | 1301/1652 [00:02<00:00, 506.28it/s][34m[1mtrain: [0mCaching images (1.6GB RAM):  82%|████████▏ | 1361/1652 [00:02<00:00, 515.86it/s][34m[1mtrain: [0mCaching images (1.6GB RAM):  86%|████████▌ | 1413/1652 [00:02<00:00, 516.22it/s][34m[1mtrain: [0mCaching images (1.7GB RAM):  89%|████████▉ | 1468/1652 [00:02<00:00, 513.11it/s][34m[1mtrain: [0mCaching images (1.7GB RAM):  92%|█████████▏| 1521/1652 [00:03<00:00, 508.40it/s][34m[1mtrain: [0mCaching images (1.8GB RAM):  95%|█████████▌| 1572/1652 [00:03<00:00, 500.44it/s][34m[1mtrain: [0mCaching images (1.9GB RAM):  98%|█████████▊| 1624/1652 [00:03<00:00, 501.12it/s][34m[1mtrain: [0mCaching images (1.9GB RAM): 100%|██████████| 1652/1652 [00:03<00:00, 500.64it/s]
+[34m[1mval: [0mScanning /home/zimozhou/RTDETR-main/dataset/sicktree4yolo/val/labels.cache... 708 images, 0 backgrounds, 0 corrupt: 100%|██████████| 708/708 [00:00<?, ?it/s][34m[1mval: [0mScanning /home/zimozhou/RTDETR-main/dataset/sicktree4yolo/val/labels.cache... 708 images, 0 backgrounds, 0 corrupt: 100%|██████████| 708/708 [00:00<?, ?it/s]
+WARNING ⚠️ cache='ram' may produce non-deterministic training results. Consider cache='disk' as a deterministic alternative if your disk space allows.
+  0%|          | 0/708 [00:00<?, ?it/s][34m[1mval: [0mCaching images (0.0GB RAM):   0%|          | 1/708 [00:00<01:28,  7.97it/s][34m[1mval: [0mCaching images (0.0GB RAM):   4%|▍         | 31/708 [00:00<00:04, 161.73it/s][34m[1mval: [0mCaching images (0.1GB RAM):   8%|▊         | 57/708 [00:00<00:03, 203.75it/s][34m[1mval: [0mCaching images (0.1GB RAM):  11%|█▏        | 81/708 [00:00<00:03, 208.73it/s][34m[1mval: [0mCaching images (0.1GB RAM):  16%|█▌        | 115/708 [00:00<00:02, 250.14it/s][34m[1mval: [0mCaching images (0.2GB RAM):  21%|██        | 149/708 [00:00<00:02, 234.49it/s][34m[1mval: [0mCaching images (0.2GB RAM):  25%|██▌       | 179/708 [00:00<00:02, 246.72it/s][34m[1mval: [0mCaching images (0.3GB RAM):  36%|███▌      | 252/708 [00:00<00:01, 376.15it/s][34m[1mval: [0mCaching images (0.4GB RAM):  46%|████▋     | 329/708 [00:01<00:00, 487.00it/s][34m[1mval: [0mCaching images (0.5GB RAM):  57%|█████▋    | 406/708 [00:01<00:00, 552.47it/s][34m[1mval: [0mCaching images (0.5GB RAM):  66%|██████▌   | 464/708 [00:01<00:00, 539.18it/s][34m[1mval: [0mCaching images (0.6GB RAM):  75%|███████▍  | 528/708 [00:01<00:00, 565.86it/s][34m[1mval: [0mCaching images (0.7GB RAM):  84%|████████▍ | 593/708 [00:01<00:00, 587.05it/s][34m[1mval: [0mCaching images (0.7GB RAM):  92%|█████████▏| 653/708 [00:01<00:00, 563.23it/s][34m[1mval: [0mCaching images (0.8GB RAM): 100%|██████████| 708/708 [00:01<00:00, 431.76it/s]
+Plotting labels to runs/train/exp-faster_dw/labels.jpg... 
+[34m[1moptimizer:[0m AdamW(lr=0.001, momentum=0.937) with parameter groups 53 weight(decay=0.0), 82 weight(decay=0.0005), 59 bias(decay=0.0)
+[34m[1mTensorBoard: [0mmodel graph visualization added ✅
+Image sizes 640 train, 640 val
+Using 12 dataloader workers
+Logging results to [1mruns/train/exp-faster_dw[0m
+Starting training for 300 epochs...
+
+      Epoch    GPU_mem   box_loss   cls_loss   dfl_loss  Instances       Size
+  0%|          | 0/26 [00:00<?, ?it/s]      1/300        19G      4.627      8.203       4.28        220        640:   0%|          | 0/26 [00:01<?, ?it/s]      1/300        19G      4.627      8.203       4.28        220        640:   4%|▍         | 1/26 [00:01<00:32,  1.31s/it]      1/300        19G      4.975      8.781      4.345        224        640:   4%|▍         | 1/26 [00:01<00:32,  1.31s/it]      1/300        19G      4.975      8.781      4.345        224        640:   8%|▊         | 2/26 [00:01<00:19,  1.21it/s]      1/300        19G      4.832      8.557      4.348        203        640:   8%|▊         | 2/26 [00:02<00:19,  1.21it/s]      1/300        19G      4.832      8.557      4.348        203        640:  12%|█▏        | 3/26 [00:02<00:15,  1.50it/s]      1/300        19G      4.833      8.916      4.343        180        640:  12%|█▏        | 3/26 [00:02<00:15,  1.50it/s]      1/300        19G      4.833      8.916      4.343        180        640:  15%|█▌        | 4/26 [00:02<00:12,  1.70it/s]      1/300        19G      4.932      8.995      4.332        183        640:  15%|█▌        | 4/26 [00:03<00:12,  1.70it/s]      1/300        19G      4.932      8.995      4.332        183        640:  19%|█▉        | 5/26 [00:03<00:11,  1.87it/s]      1/300      20.2G      4.977      9.041      4.327        207        640:  19%|█▉        | 5/26 [00:03<00:11,  1.87it/s]      1/300      20.2G      4.977      9.041      4.327        207        640:  23%|██▎       | 6/26 [00:03<00:09,  2.00it/s]      1/300      20.2G      5.065      9.385       4.32        151        640:  23%|██▎       | 6/26 [00:04<00:09,  2.00it/s]      1/300      20.2G      5.065      9.385       4.32        151        640:  27%|██▋       | 7/26 [00:04<00:09,  2.08it/s]      1/300      20.2G      5.113      9.363      4.321        188        640:  27%|██▋       | 7/26 [00:04<00:09,  2.08it/s]      1/300      20.2G      5.113      9.363      4.321        188        640:  31%|███       | 8/26 [00:04<00:08,  2.15it/s]      1/300      20.2G      5.147      9.374      4.327        178        640:  31%|███       | 8/26 [00:04<00:08,  2.15it/s]      1/300      20.2G      5.147      9.374      4.327        178        640:  35%|███▍      | 9/26 [00:04<00:07,  2.17it/s]      1/300      20.2G      5.208      9.468      4.321        199        640:  35%|███▍      | 9/26 [00:05<00:07,  2.17it/s]      1/300      20.2G      5.208      9.468      4.321        199        640:  38%|███▊      | 10/26 [00:05<00:07,  2.21it/s]      1/300      20.2G      5.221       9.52      4.314        172        640:  38%|███▊      | 10/26 [00:05<00:07,  2.21it/s]      1/300      20.2G      5.221       9.52      4.314        172        640:  42%|████▏     | 11/26 [00:05<00:06,  2.22it/s]      1/300      20.2G      5.162      9.291      4.309        187        640:  42%|████▏     | 11/26 [00:06<00:06,  2.22it/s]      1/300      20.2G      5.162      9.291      4.309        187        640:  46%|████▌     | 12/26 [00:06<00:06,  2.24it/s]      1/300      20.2G      5.138      9.157      4.304        232        640:  46%|████▌     | 12/26 [00:06<00:06,  2.24it/s]      1/300      20.2G      5.138      9.157      4.304        232        640:  50%|█████     | 13/26 [00:06<00:05,  2.26it/s]      1/300      20.2G      5.097      9.068      4.299        174        640:  50%|█████     | 13/26 [00:07<00:05,  2.26it/s]      1/300      20.2G      5.097      9.068      4.299        174        640:  54%|█████▍    | 14/26 [00:07<00:05,  2.27it/s]      1/300      20.2G        5.1      9.086      4.295        172        640:  54%|█████▍    | 14/26 [00:07<00:05,  2.27it/s]      1/300      20.2G        5.1      9.086      4.295        172        640:  58%|█████▊    | 15/26 [00:07<00:04,  2.25it/s]      1/300      20.2G      5.098       9.07       4.29        187        640:  58%|█████▊    | 15/26 [00:08<00:04,  2.25it/s]      1/300      20.2G      5.098       9.07       4.29        187        640:  62%|██████▏   | 16/26 [00:08<00:04,  2.27it/s]      1/300      20.2G      5.091      9.042      4.288        181        640:  62%|██████▏   | 16/26 [00:08<00:04,  2.27it/s]      1/300      20.2G      5.091      9.042      4.288        181        640:  65%|██████▌   | 17/26 [00:08<00:03,  2.28it/s]slurmstepd: error: *** JOB 40402336 ON ng31301 CANCELLED AT 2025-02-18T21:34:43 DUE TO TIME LIMIT ***
+      1/300      20.2G      5.068      9.058      4.283        171        640:  65%|██████▌   | 17/26 [00:08<00:03,  2.28it/s]      1/300      20.2G      5.068      9.058      4.283        171        640:  69%|██████▉   | 18/26 [00:08<00:03,  2.28it/s]      1/300      20.2G      5.034      8.968      4.278        217        640:  69%|██████▉   | 18/26 [00:09<00:03,  2.28it/s]      1/300      20.2G      5.034      8.968      4.278        217        640:  73%|███████▎  | 19/26 [00:09<00:03,  2.29it/s]      1/300      20.2G      5.041      8.969      4.271        198        640:  73%|███████▎  | 19/26 [00:09<00:03,  2.29it/s]      1/300      20.2G      5.041      8.969      4.271        198        640:  77%|███████▋  | 20/26 [00:09<00:02,  2.29it/s]      1/300      20.2G      5.047      8.943      4.266        206        640:  77%|███████▋  | 20/26 [00:10<00:02,  2.29it/s]      1/300      20.2G      5.047      8.943      4.266        206        640:  81%|████████  | 21/26 [00:10<00:02,  2.30it/s]
