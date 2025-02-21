@@ -17,7 +17,7 @@ if __name__ == '__main__':
     #model = RTDETR('ultralytics/cfg/models/yolo-detr/yolov8-detr-C2f-Faster-EMA.yaml')  
     #model = RTDETR('ultralytics/cfg/models/yolo-detr/yolov5-detr-C3-DCNV4.yaml') 
     #model = RTDETR('ultralytics/cfg/models/yolo-detr/yolov8s-detr-C2f-DCNV4.yaml')
-    model = YOLO("ultralytics/cfg/models/v8/yolov8-fasternet.yaml")
+    model = YOLO("ultralytics/cfg/models/v8/yolov8s.yaml")
     #model = RTDETR("ultralytics/cfg/models/yolo-detr/yolov8-fasternet-detr-goldyolo.yaml")
     #model = RTDETR('ultralytics/cfg/models/yolo-detr/yolov8s-detr.yaml')
     #model = YOLO('ultralytics/cfg/models/yolo-detr/yolov8s-detr-faster-newneck-2stream_vis.yaml')

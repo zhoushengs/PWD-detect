@@ -4,7 +4,7 @@
 #SBATCH --mem=40G      
 #SBATCH --tasks-per-node=1 
 #SBATCH --cpus-per-task=2
-#SBATCH --time=4:03:00
+#SBATCH --time=5:03:00
 #SBATCH --output=%j-fasternet_dw.out
 #SBATCH --account=def-xianyi
 
