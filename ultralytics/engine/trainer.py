@@ -130,7 +130,7 @@ class BaseTrainer:
         # Model and Dataset
         self.model = check_model_file_from_stem(self.args.model)  # add suffix, i.e. yolov8n -> yolov8n.pt
         with torch_distributed_zero_first(LOCAL_RANK):  # avoid auto-downloading dataset multiple times
-            self.trainset, self.testset = self.get_dataset()
+            self.trainset,self.valset, self.testset = self.get_dataset()
         self.ema = None
 
         # Optimization utils init
@@ -286,10 +286,14 @@ class BaseTrainer:
         self.train_loader = self.get_dataloader(self.trainset, batch_size=batch_size, rank=LOCAL_RANK, mode="train")
         if RANK in {-1, 0}:
             # Note: When training DOTA dataset, double batch size could get OOM on images with >2000 objects.
+            self.val_loader = self.get_dataloader(
+                self.valset, batch_size=batch_size if self.args.task == "obb" else batch_size * 2, rank=-1, mode="val"
+            )
             self.test_loader = self.get_dataloader(
                 self.testset, batch_size=batch_size if self.args.task == "obb" else batch_size * 2, rank=-1, mode="val"
             )
-            self.validator = self.get_validator()
+            self.validator = self.get_validator()   # call yolo.detect.DetectionValidator
+            self.testor = self.get_testor()
             metric_keys = self.validator.metrics.keys + self.label_loss_items(prefix="val")
             self.metrics = dict(zip(metric_keys, [0] * len(metric_keys)))
             self.ema = ModelEMA(self.model)
@@ -466,7 +470,7 @@ class BaseTrainer:
             # Do final val with best.pt
             seconds = time.time() - self.train_time_start
             LOGGER.info(f"\n{epoch - self.start_epoch + 1} epochs completed in {seconds / 3600:.3f} hours.")
-            self.final_eval()
+            self.final_eval()  # call self.validator  -> yolo.detect.DetectionValidator
             if self.args.plots:
                 self.plot_metrics()
             self.run_callbacks("on_train_end")
@@ -565,7 +569,7 @@ class BaseTrainer:
         except Exception as e:
             raise RuntimeError(emojis(f"Dataset '{clean_url(self.args.data)}' error ❌ {e}")) from e
         self.data = data
-        return data["train"], data.get("val") or data.get("test")
+        return data["train"], data.get("val"), data.get("test") or data.get("val")
 
     def setup_model(self):
         """Load/create/download model for any task."""
@@ -615,6 +619,10 @@ class BaseTrainer:
     def get_validator(self):
         """Returns a NotImplementedError when the get_validator function is called."""
         raise NotImplementedError("get_validator function not implemented in trainer")
+
+    def get_testor(self):
+        raise NotImplementedError("get_validator function not implemented in trainer")
+
 
     def get_dataloader(self, dataset_path, batch_size=16, rank=0, mode="train"):
         """Returns dataloader derived from torch.data.Dataloader."""
@@ -684,8 +692,10 @@ class BaseTrainer:
                     strip_optimizer(f, updates={k: ckpt[k]} if k in ckpt else None)
                     LOGGER.info(f"\nValidating {f}...")
                     self.validator.args.plots = self.args.plots
+                    self.testor.args.plots = self.args.plots
                     self.metrics = self.validator(model=f)
                     self.metrics.pop("fitness", None)
+                    self.metrics = self.testor(model=f)
                     self.run_callbacks("on_fit_epoch_end")
 
     def check_resume(self, overrides):
