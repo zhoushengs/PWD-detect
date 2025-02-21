@@ -19,7 +19,8 @@ if __name__ == '__main__':
     dt1 = datetime.now()
     
     print(dt1.strftime('%Y-%m-%d %H:%M:%S'))
-    model.train(data="/home/zimozhou/RTDETR-main/dataset/1.yaml",
+    model.train(#data="/home/zimozhou/RTDETR-main/dataset/1.yaml",# 
+                data = "/home/zimozhou/RTDETR-main-3/dataset/data.yaml",
                 lr0=0.001,
                 lrf=0.005,
                 cos_lr=True,
@@ -30,7 +31,7 @@ if __name__ == '__main__':
                 patience=0,
                 warmup_epochs=10,
                 warmup_bias_lr=0.0001,
-                batch=64,
+                batch=96,
                 #mosaic = 0.1,
                 #close_mosaic=0,
                 workers=12,
