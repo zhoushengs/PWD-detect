@@ -172,9 +172,14 @@ pnnx*
 # calibration image
 calibration_*.npy
 
+
 *.out
 train_VisDrone.py
 train_on_cc.py
 *.sh
 
 train.py
+<<<<<<< HEAD
+=======
+
+>>>>>>> 0580b0e16f4f7fd1f1a975159fd5b53c77d0b3d5

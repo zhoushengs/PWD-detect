@@ -11,7 +11,7 @@ from ultralytics import RTDETR
 # Train the model
 if __name__ == '__main__':
     #model = YOLO("ultralytics/cfg/models/11/yolo11.yaml")
-    model = YOLO("ultralytics/cfg/models/v8/yolov8-fasternet_t0.yaml")
+    model = YOLO("ultralytics/cfg/models/v8/yolov8-fasternet_t1_dw.yaml")
     #model = YOLO("ultralytics/cfg/models/v10/yolov10n.yaml")
     #model = YOLO('ultralytics/cfg/models/v8/yolov8n.yaml')
     #model = YOLO("E:\\projects\\pytorch\\yolov11\\ultralytics\\runs\detect\\train23\\weights\\best.pt")
