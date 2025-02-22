@@ -173,5 +173,5 @@ pnnx*
 calibration_*.npy
 
 *.out
-
+train.py
 

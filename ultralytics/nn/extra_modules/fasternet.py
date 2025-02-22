@@ -573,7 +573,7 @@ def fasternet_t1(weights=None, cfg='ultralytics/nn/extra_modules/cfg/fasternet_t
         model.load_state_dict(update_weight(model.state_dict(), pretrain_weight))
     return model
 
-def fasternet_t1_dw(weights=None, cfg='ultralytics/nn/backbone/faster_cfg/fasternet_t1_dw.yaml'):
+def fasternet_t1_dw(weights=None, cfg='ultralytics/nn/extra_modules/cfg/fasternet_t1_dw.yaml'):
     with open(cfg) as f:
         cfg = yaml.load(f, Loader=yaml.SafeLoader)
     model = FasterNet(**cfg)
@@ -582,17 +582,7 @@ def fasternet_t1_dw(weights=None, cfg='ultralytics/nn/backbone/faster_cfg/faster
         model.load_state_dict(update_weight(model.state_dict(), pretrain_weight))
     return model
 
-def fasternet_t2(weights=None, cfg='ultralytics/nn/backbone/faster_cfg/fasternet_t2.yaml'):
-    with open(cfg) as f:
-        cfg = yaml.load(f, Loader=yaml.SafeLoader)
-    model = FasterNet(**cfg)
-    if weights is not None:
-        pretrain_weight = torch.load(weights, map_location='cpu')
-        model.load_state_dict(update_weight(model.state_dict(), pretrain_weight))
-    return model
-
-
-def fasternet_s(weights=None, cfg='ultralytics/nn/backbone/faster_cfgg/fasternet_s.yaml'):
+def fasternet_t2(weights=None, cfg='ultralytics/nn/extra_modules/cfg/fasternet_t2.yaml'):
     with open(cfg) as f:
         cfg = yaml.load(f, Loader=yaml.SafeLoader)
     model = FasterNet(**cfg)
@@ -602,7 +592,7 @@ def fasternet_s(weights=None, cfg='ultralytics/nn/backbone/faster_cfgg/fasternet
     return model
 
 
-def fasternet_m(weights=None, cfg='ultralytics/nn/backbone/faster_cfg/fasternet_m.yaml'):
+def fasternet_s(weights=None, cfg='ultralytics/nn/extra_modules/cfg/fasternet_s.yaml'):
     with open(cfg) as f:
         cfg = yaml.load(f, Loader=yaml.SafeLoader)
     model = FasterNet(**cfg)
@@ -612,7 +602,17 @@ def fasternet_m(weights=None, cfg='ultralytics/nn/backbone/faster_cfg/fasternet_
     return model
 
 
-def fasternet_l(weights=None, cfg='ultralytics/nn/backbone/faster_cfg/fasternet_l.yaml'):
+def fasternet_m(weights=None, cfg='ultralytics/nn/extra_modules/cfg/fasternet_m.yaml'):
+    with open(cfg) as f:
+        cfg = yaml.load(f, Loader=yaml.SafeLoader)
+    model = FasterNet(**cfg)
+    if weights is not None:
+        pretrain_weight = torch.load(weights, map_location='cpu')
+        model.load_state_dict(update_weight(model.state_dict(), pretrain_weight))
+    return model
+
+
+def fasternet_l(weights=None, cfg='ultralytics/nn/extra_modules/cfg/fasternet_l.yaml'):
     with open(cfg) as f:
         cfg = yaml.load(f, Loader=yaml.SafeLoader)
     model = FasterNet(**cfg)
