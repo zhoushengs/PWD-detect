@@ -179,4 +179,4 @@ train_on_cc.py
 *.sh
 
 train.py
-
+*.pth
