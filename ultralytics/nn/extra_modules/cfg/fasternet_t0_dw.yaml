@@ -11,4 +11,4 @@ drop_path_rate: 0.
 norm_layer:  BN
 act_layer: GELU
 n_div: 4
-groups: 1
+groups: 2
