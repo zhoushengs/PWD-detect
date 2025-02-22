@@ -173,5 +173,6 @@ pnnx*
 calibration_*.npy
 
 *.out
-
-
+train_VisDrone.py
+train_on_cc.py
+*.sh
