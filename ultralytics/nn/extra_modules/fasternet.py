@@ -10,10 +10,10 @@ import copy
 import os
 import numpy as np
 from pytorch_wavelets import DWTForward
-from ..modules.conv import DWConv,Conv
+from ..modules.conv import DWConv, Conv
 
 
-__all__ = ['fasternet_t0', 'fasternet_t1', 'fasternet_t2', 'fasternet_s', 'fasternet_m', 'fasternet_l','fasternet_t0_DWave']
+__all__ = ['fasternet_t0', 'fasternet_t1', 'fasternet_t2', 'fasternet_s', 'fasternet_m', 'fasternet_l','fasternet_t0_dw','fasternet_t1_dw']
 
 
 class Partial_conv3(nn.Module):
@@ -57,7 +57,8 @@ class MLPBlock(nn.Module):
                  layer_scale_init_value,
                  act_layer,
                  norm_layer,
-                 pconv_fw_type
+                 pconv_fw_type,
+                 groups
                  ):
 
         super().__init__()
@@ -69,10 +70,10 @@ class MLPBlock(nn.Module):
         mlp_hidden_dim = int(dim * mlp_ratio)
 
         mlp_layer: List[nn.Module] = [
-            nn.Conv2d(dim, mlp_hidden_dim, 1,groups=2, bias=False),
+            nn.Conv2d(dim, mlp_hidden_dim, 1,groups=groups, bias=False),
             norm_layer(mlp_hidden_dim),
             act_layer(),
-            nn.Conv2d(mlp_hidden_dim, dim, 1,groups=2, bias=False)
+            nn.Conv2d(mlp_hidden_dim, dim, 1,groups=groups, bias=False)
         ]
 
         self.mlp = nn.Sequential(*mlp_layer)
@@ -114,7 +115,8 @@ class BasicStage(nn.Module):
                  layer_scale_init_value,
                  norm_layer,
                  act_layer,
-                 pconv_fw_type
+                 pconv_fw_type,
+                 groups
                  ):
         super().__init__()
 
@@ -127,7 +129,8 @@ class BasicStage(nn.Module):
                 layer_scale_init_value=layer_scale_init_value,
                 norm_layer=norm_layer,
                 act_layer=act_layer,
-                pconv_fw_type=pconv_fw_type
+                pconv_fw_type=pconv_fw_type,
+                groups=groups
             )
             for i in range(depth)
         ]
@@ -300,6 +303,7 @@ class FasterNet_DWave(nn.Module):
                  init_cfg=None,
                  pretrained=None,
                  pconv_fw_type='split_cat',
+                 groups=2,
                  **kwargs):
         super().__init__()
 
@@ -352,7 +356,8 @@ class FasterNet_DWave(nn.Module):
                                layer_scale_init_value=layer_scale_init_value,
                                norm_layer=norm_layer,
                                act_layer=act_layer,
-                               pconv_fw_type=pconv_fw_type
+                               pconv_fw_type=pconv_fw_type,
+                               groups=groups
                                )
             stages_list.append(stage)
 
@@ -434,6 +439,7 @@ class FasterNet(nn.Module):
                  init_cfg=None,
                  pretrained=None,
                  pconv_fw_type='split_cat',
+                 groups=1,
                  **kwargs):
         super().__init__()
 
@@ -486,7 +492,8 @@ class FasterNet(nn.Module):
                                layer_scale_init_value=layer_scale_init_value,
                                norm_layer=norm_layer,
                                act_layer=act_layer,
-                               pconv_fw_type=pconv_fw_type
+                               pconv_fw_type=pconv_fw_type,
+                               groups=groups
                                )
             stages_list.append(stage)
 
@@ -548,7 +555,7 @@ def fasternet_t0(weights=None, cfg='ultralytics/nn/extra_modules/cfg/fasternet_t
         model.load_state_dict(update_weight(model.state_dict(), pretrain_weight))
     return model
 
-def fasternet_t0_DWave(weights=None, cfg='ultralytics/nn/extra_modules/cfg/fasternet_t0.yaml'):
+def fasternet_t0_dw(weights=None, cfg='ultralytics/nn/extra_modules/cfg/fasternet_t0_dw.yaml'):
     with open(cfg) as f:
         cfg = yaml.load(f, Loader=yaml.SafeLoader)
     model = FasterNet_DWave(**cfg)
@@ -566,6 +573,14 @@ def fasternet_t1(weights=None, cfg='ultralytics/nn/backbone/faster_cfg/fasternet
         model.load_state_dict(update_weight(model.state_dict(), pretrain_weight))
     return model
 
+def fasternet_t1_dw(weights=None, cfg='ultralytics/nn/backbone/faster_cfg/fasternet_t1_dw.yaml'):
+    with open(cfg) as f:
+        cfg = yaml.load(f, Loader=yaml.SafeLoader)
+    model = FasterNet(**cfg)
+    if weights is not None:
+        pretrain_weight = torch.load(weights, map_location='cpu')
+        model.load_state_dict(update_weight(model.state_dict(), pretrain_weight))
+    return model
 
 def fasternet_t2(weights=None, cfg='ultralytics/nn/backbone/faster_cfg/fasternet_t2.yaml'):
     with open(cfg) as f:
