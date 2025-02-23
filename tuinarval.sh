@@ -4,8 +4,8 @@
 #SBATCH --mem=40G      
 #SBATCH --tasks-per-node=1 
 #SBATCH --cpus-per-task=2
-#SBATCH --time=5:03:00
-#SBATCH --output=%j-fasternet_dw.out
+#SBATCH --time=6:03:00
+#SBATCH --output=%j-v11s.out
 #SBATCH --account=def-xianyi
 
 module load StdEnv/2020 gcc/9.3.0 opencv/4.7.0 "cuda/11.7" python/3.8.10
