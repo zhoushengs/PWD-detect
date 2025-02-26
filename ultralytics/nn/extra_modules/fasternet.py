@@ -272,13 +272,43 @@ class PatchMerging_DW(nn.Module):
             self.norm = norm_layer(2 * dim)
         else:
             self.norm = nn.Identity()
+        self.cmce = CMCE2(2*dim)
 
     def forward(self, x: Tensor) -> Tensor:
         x1,x2 = torch.chunk(x, 2, dim=1)
         x1 = self.reduction(x1)
         x2 = self.dw_reduction(x2)
-        x = self.norm(self.conv(torch.cat((x1,x2), dim=1)))
+        x = self.norm(self.cmce(self.conv(torch.cat((x1,x2), dim=1))))
         return x
+    
+class CMCE2(nn.Module):
+    def __init__(self, in_channel=3):
+        super(CMCE2, self).__init__()
+        self.relu = nn.ReLU()
+
+        self.l1 = nn.Linear(in_channel, in_channel // 2)
+        self.norm = nn.BatchNorm1d(in_channel // 2)
+        self.l2 = nn.Linear(in_channel // 2, in_channel)
+
+    def forward(self, x):
+        fa, fb = x.chunk(2, dim=1)
+        (b1, c1, h1, w1), (b2, c2, h2, w2) = fa.size(), fb.size()
+        assert c1 == c2
+
+        s_cos_sim = F.cosine_similarity(fa.view(b1, c1, h1 * w1), fb.view(b2, c2, h2 * w2), dim=2).view(b1, -1)
+
+        w = F.sigmoid(self.l2(self.relu(self.norm(self.l1(s_cos_sim))))).view(b1, -1, 1, 1)
+
+
+        cos_sim = F.cosine_similarity(fa, fb, dim=1)
+        cos_sim = cos_sim.unsqueeze(1)
+        fa_new = fa + fb * (cos_sim) * w
+        fb_new = fb + fa * (cos_sim) * (1 - w)
+
+        fa_new = self.relu(fa_new)
+        fb_new = self.relu(fb_new)
+
+        return torch.cat((fa_new, fb_new), dim=1)
 
 ########  Wavelet module
 
@@ -372,7 +402,7 @@ class FasterNet_DWave(nn.Module):
 
             # patch merging layer
             if i_stage < self.num_stages - 1:
-                if i_stage>=1:
+                if i_stage>=2:
                     stages_list.append(
                         PatchMerging(patch_size2=patch_size2,
                                      patch_stride2=patch_stride2,
