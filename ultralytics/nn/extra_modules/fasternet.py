@@ -273,7 +273,7 @@ class PatchMerging_DW(nn.Module):
             self.norm = norm_layer(2 * dim)
         else:
             self.norm = nn.Identity()
-        self.cmce = CMCE2(2*dim)
+        self.cmce = CMCE2(dim)
 
     def forward(self, x: Tensor) -> Tensor:
         x1,x2 = torch.chunk(x, 2, dim=1)
@@ -288,7 +288,8 @@ class CMCE2(nn.Module):
         self.relu = nn.ReLU()
 
         self.l1 = nn.Linear(in_channel, in_channel // 2)
-        self.norm = nn.BatchNorm1d(in_channel // 2)
+        #self.norm = nn.BatchNorm1d(in_channel // 2, track_running_stats=True)
+    
         self.l2 = nn.Linear(in_channel // 2, in_channel)
 
     def forward(self, x):
@@ -298,7 +299,7 @@ class CMCE2(nn.Module):
 
         s_cos_sim = F.cosine_similarity(fa.view(b1, c1, h1 * w1), fb.view(b2, c2, h2 * w2), dim=2).view(b1, -1)
 
-        w = F.sigmoid(self.l2(self.relu(self.norm(self.l1(s_cos_sim))))).view(b1, -1, 1, 1)
+        w = F.sigmoid(self.l2(self.relu((self.l1(s_cos_sim))))).view(b1, -1, 1, 1)
 
 
         cos_sim = F.cosine_similarity(fa, fb, dim=1)
@@ -607,7 +608,7 @@ def fasternet_t1(weights=None, cfg='ultralytics/nn/extra_modules/cfg/fasternet_t
 def fasternet_t1_dw(weights=None, cfg='ultralytics/nn/extra_modules/cfg/fasternet_t1_dw.yaml'):
     with open(cfg) as f:
         cfg = yaml.load(f, Loader=yaml.SafeLoader)
-    model = FasterNet(**cfg)
+    model = FasterNet_DWave(**cfg)
     if weights is not None:
         pretrain_weight = torch.load(weights, map_location='cpu')
         model.load_state_dict(update_weight(model.state_dict(), pretrain_weight))
