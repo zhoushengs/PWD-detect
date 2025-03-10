@@ -20,7 +20,7 @@ scales: # model compound scaling constants, i.e. 'model=yolov8n.yaml' will call 
 # YOLOv8.0n backbone
 backbone:
   # [from, repeats, module, args]
-  - [-1, 1, fasternet_t0, []]  # 4
+  - [-1, 1, fasternet_t0, ['fasternet_t0.pth']]  # 4
   #- [-1, 1, fasternet_t0, []]
   - [-1, 1, SPPF, [1024, 5]]  # 5
 
