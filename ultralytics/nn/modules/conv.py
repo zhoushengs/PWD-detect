@@ -2,10 +2,11 @@
 """Convolution modules."""
 
 import math
-
+from pytorch_wavelets import DWTForward
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 __all__ = (
     "Conv",
@@ -22,6 +23,8 @@ __all__ = (
     "Concat",
     "RepConv",
     "Index",
+    "WGAFM",
+    'WGAFMdown',
 )
 
 
@@ -32,6 +35,136 @@ def autopad(k, p=None, d=1):  # kernel, padding, dilation
     if p is None:
         p = k // 2 if isinstance(k, int) else [x // 2 for x in k]  # auto-pad
     return p
+
+
+class WGAFMdown(nn.Module):
+    def __init__(self, in_channels, out_channels, num_heads=4, reduction=16):
+        super(WGAFMdown, self).__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.num_heads = num_heads
+        self.reduction = reduction
+
+        # Multi-head self-attention
+        self.attn = nn.MultiheadAttention(embed_dim=in_channels, num_heads=num_heads)
+        # Attention weights MLP
+        self.fc1 = nn.Linear(in_channels * 4, in_channels // reduction)
+        self.fc2 = nn.Linear(in_channels // reduction, in_channels * 4)
+
+        # Convolution refinement (no change in kernel size, output will be at reduced resolution)
+        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
+
+        # Wavelet transform (using pytorch_wavelets DWTForward)
+        self.dwt = DWTForward(J=1, wave='haar', mode='zero')
+
+    def dwt_forward(self, x):
+        # Input x: [B, C, H, W]
+        B, C, H, W = x.shape
+        ll, h = self.dwt(x)  # ll: low-frequency component [B, C, H/2, W/2], h: high-frequency components
+        lh, hl, hh = h[0][:, :, 0], h[0][:, :, 1], h[0][:, :, 2]  # Extract LH, HL, HH
+        wavelets = [ll, lh, hl, hh]  # Each component [B, C, H/2, W/2]
+        return wavelets
+
+    def forward(self, x):
+        B, C, H, W = x.shape
+        H_new, W_new = H // 2, W // 2  # Target output resolution
+
+        # Wavelet decomposition
+        wavelets = self.dwt_forward(x)  # List [F_LL, F_LH, F_HL, F_HH], each [B, C, H/2, W/2]
+        F_LL, F_LH, F_HL, F_HH = wavelets  # Each component is already [B, C, H/2, W/2]
+
+        # Multi-head self-attention
+        attn_inputs = [F_LL, F_LH, F_HL, F_HH]
+        attn_outputs = []
+        for f in attn_inputs:
+            b, c, h, w = f.shape  # h = H/2, w = W/2
+            x_flat = f.view(b, c, h * w).transpose(1, 2)  # [B, N, C], where N = (H/2) * (W/2)
+            
+            attn_out, _ = self.attn(x_flat, x_flat, x_flat)  # [B, N, C]
+            attn_outputs.append(attn_out.transpose(1, 2).view(b, c, h, w))  # [B, C, H/2, W/2]
+
+        # Cross-component attention (concatenate along channel dimension)
+        attn_concat = torch.cat(attn_outputs, dim=1)  # [B, 4C, H/2, W/2]
+        global_pool = F.adaptive_avg_pool2d(attn_concat, (1, 1)).view(B, -1)  # [B, 4C]
+        attn_weights = torch.sigmoid(self.fc2(F.relu(self.fc1(global_pool))))  # [B, 4C]
+        attn_weights = attn_weights.view(B, 4, C, 1, 1).expand(-1, -1, -1, H_new, W_new)  # [B, 4, C, H/2, W/2]
+
+        # Dynamic fusion
+        attn_weights_adjusted = attn_weights.mean(dim=1)  # [B, C, H/2, W/2], average weights across components
+        F_attended = sum(w * f for w, f in zip(attn_weights.chunk(4, dim=1), attn_outputs))  # [B, 4, C, H/2, W/2]
+        F_attended = F_attended.sum(dim=1)  # Sum over the 4 components, [B, C, H/2, W/2]
+
+        # Residual connection: Downsample the input x to match [H/2, W/2]
+        x_down = F.interpolate(x, size=(H_new, W_new), mode='bilinear', align_corners=False)  # [B, C, H/2, W/2]
+        F_attended = F_attended + (1 - attn_weights.mean()) * x_down  # [B, C, H/2, W/2]
+
+        # Final convolution to refine features
+        F_fused = self.conv(F_attended)  # [B, out_channels, H/2, W/2]
+
+        return F_fused
+
+class WGAFM(nn.Module):
+    def __init__(self, in_channels,out_channels, num_heads=4, reduction=16):
+        super(WGAFM, self).__init__()
+        self.in_channels = in_channels
+        self.num_heads = num_heads
+        self.reduction = reduction
+
+        # 多头自注意力
+        self.attn = nn.MultiheadAttention(embed_dim=in_channels, num_heads=num_heads)
+        # 注意力权重 MLP
+        self.fc1 = nn.Linear(in_channels * 4, in_channels // reduction)
+        self.fc2 = nn.Linear(in_channels // reduction, in_channels * 4)
+
+        # 卷积精炼
+        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
+
+        # 小波变换（使用 pytorch_wavelets 的 DWTForward）
+        self.dwt = DWTForward(J=1, wave='haar', mode='zero')
+
+    def dwt_forward(self, x):
+        # 输入 x: [B, C, H, W]
+        B, C, H, W = x.shape
+        ll, h = self.dwt(x)  # ll: 低频分量 [B, C, H/2, W/2], h: 高频分量列表
+        lh, hl, hh = h[0][:, :, 0], h[0][:, :, 1], h[0][:, :, 2]  # 提取 LH, HL, HH
+        wavelets = [ll, lh, hl, hh]  # 每个分量 [B, C, H/2, W/2]
+        return wavelets
+
+    def forward(self, x):
+        B, C, H, W = x.shape
+
+        # 小波分解
+        wavelets = self.dwt_forward(x)  # 列表 [F_LL, F_LH, F_HL, F_HH], 每个分量 [B, C, H/2, W/2]
+        
+        # 上采样到原始分辨率
+        upsampled = [F.interpolate(w, size=(H, W), mode='bilinear', align_corners=False) for w in wavelets]
+        F_LL, F_LH, F_HL, F_HH = upsampled  # 每个分量 [B, C, H, W]
+
+        # 多头自注意力
+        attn_inputs = [F_LL, F_LH, F_HL, F_HH]
+        attn_outputs = []
+        for f in attn_inputs:
+            b, c, h, w = f.shape
+            x_flat = f.view(b, c, h * w).transpose(1, 2)  # [B, N, C]
+            
+            attn_out, _ = self.attn(x_flat, x_flat, x_flat)  # [B, N, C]
+            attn_outputs.append(attn_out.transpose(1, 2).view(b, c, h, w))
+
+        # 跨分量注意力（简化为拼接）
+        attn_concat = torch.cat(attn_outputs, dim=1)  # [B, 4C, H, W]
+        global_pool = F.adaptive_avg_pool2d(attn_concat, (1, 1)).view(B, -1)  # [B, 4C]
+        attn_weights = torch.sigmoid(self.fc2(F.relu(self.fc1(global_pool))))  # [B, 4C]
+        attn_weights = attn_weights.view(B, 4, C, 1, 1).expand(-1, -1, -1, H, W)  # [B, 4, C, H, W]
+
+        # 动态融合，沿分量维度 chunk
+        attn_weights_adjusted = attn_weights.mean(dim=1)  # [B, C, H, W]，取每个分量的平均权重
+        F_attended = sum(w * f for w, f in zip(attn_weights.chunk(4, dim=1), attn_outputs))  # [B, 4, C, H, W]
+        F_attended = F_attended.sum(dim=1)  # 合并 4 个分量，得到 [B, C, H, W]
+        F_attended = F_attended + (1 - attn_weights.mean()) * x  # [B, C, H, W]
+        F_fused = self.conv(F_attended)
+
+        return F_fused
+
 
 
 class Conv(nn.Module):

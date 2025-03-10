@@ -73,6 +73,8 @@ from .conv import (
     LightConv,
     RepConv,
     SpatialAttention,
+    WGAFM,
+    WGAFMdown,
 )
 from .head import OBB, Classify, Detect, Pose, RTDETRDecoder, Segment, WorldDetect, v10Detect
 from .transformer import (
@@ -160,4 +162,6 @@ __all__ = (
     "PSA",
     "TorchVision",
     "Index",
+    "WGAFM",
+    "WGAFMdown",
 )
