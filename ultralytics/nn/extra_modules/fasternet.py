@@ -273,7 +273,7 @@ class PatchMerging_DW(nn.Module):
             self.norm = norm_layer(2 * dim)
         else:
             self.norm = nn.Identity()
-        self.cmce = CMCE2(dim)
+        self.cmce = ImprovedCMCE(dim)
 
     def forward(self, x: Tensor) -> Tensor:
         x1,x2 = torch.chunk(x, 2, dim=1)
@@ -281,7 +281,64 @@ class PatchMerging_DW(nn.Module):
         x2 = self.dw_reduction(x2)
         x = self.norm(self.cmce(self.conv(torch.cat((x1,x2), dim=1))))
         return x
-    
+
+class ImprovedCMCE(nn.Module):
+    def __init__(self, channels, reduction_ratio=2):
+        super(ImprovedCMCE, self).__init__()
+        
+        # 中间通道数，避免过度压缩
+        mid_channels = max(channels // reduction_ratio, 8)
+        
+        # 特征提取分支
+        self.channel_attention = nn.Sequential(
+            nn.AdaptiveAvgPool2d(1),
+            nn.Conv2d(channels, mid_channels, 1, bias=False),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(mid_channels, channels, 1, bias=False),
+            nn.Sigmoid()
+        )
+        
+        # 相互增强分支
+        self.mutual_enhance = nn.Sequential(
+            nn.Conv2d(channels*2, channels, 1, bias=False),
+            nn.BatchNorm2d(channels),
+            nn.ReLU(inplace=True)
+        )
+        
+        # 输出调整
+        self.output_conv = nn.Conv2d(channels*2, channels*2, 1, bias=False)
+        self.relu = nn.ReLU(inplace=True)
+        
+    def forward(self, x):
+        fa, fb = x.chunk(2, dim=1)
+        
+        # 通道注意力，更有效地计算特征重要性
+        b, c, h, w = fa.size()
+        
+        # 计算互相关性
+        fa_pool = fa.view(b, c, -1).mean(dim=2).view(b, c, 1, 1)
+        fb_pool = fb.view(b, c, -1).mean(dim=2).view(b, c, 1, 1)
+        
+        # 计算通道注意力权重
+        wa = self.channel_attention(fa_pool)
+        wb = self.channel_attention(fb_pool)
+        
+        # 交叉增强
+        fa_enhanced = fa + fb * wa
+        fb_enhanced = fb + fa * wb
+        
+        # 特征融合（添加非线性交互）
+        fused = self.mutual_enhance(torch.cat([fa, fb], dim=1))
+        
+        # 残差连接
+        fa_new = fa_enhanced + fused
+        fb_new = fb_enhanced + fused
+        
+        # 最终输出
+        output = self.relu(self.output_conv(torch.cat([fa_new, fb_new], dim=1)))
+        
+        return output
+
 class CMCE2(nn.Module):
     def __init__(self, in_channel=3):
         super(CMCE2, self).__init__()
