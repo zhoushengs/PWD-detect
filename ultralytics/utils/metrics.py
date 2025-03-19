@@ -748,11 +748,11 @@ class Metric(SimpleClass):
     def fitness(self):
         """Model fitness as a weighted combination of metrics."""
         try:
-            metrice = np.array(self.class_result(1))+np.array(self.mean_results()) if len(self.p) == 2 else np.array(self.mean_results()) # 2-class or multi-class 
+            metrics = np.array(self.class_result(1))+np.array(self.mean_results()) if len(self.p) == 2 else np.array(self.mean_results()) # 2-class or multi-class 
         except:
-            metrice = np.array(self.mean_results())
+            metrics = np.array(self.mean_results())
         w = [0.0, 0.0, 0.5, 0.5]  # weights for [P, R, mAP@0.5, mAP@0.5:0.95]
-        return (metrice * w).sum()
+        return (metrics * w).sum()
 
     def update(self, results):
         """
