@@ -212,22 +212,26 @@ class v8DetectionLoss:
             (self.reg_max * 4, self.nc), 1
         )
 
-        pred_scores = pred_scores.permute(0, 2, 1).contiguous()
+        pred_scores = pred_scores.permute(0, 2, 1).contiguous() # b*8400*nc
         pred_distri = pred_distri.permute(0, 2, 1).contiguous()
 
         dtype = pred_scores.dtype
         batch_size = pred_scores.shape[0]
         imgsz = torch.tensor(feats[0].shape[2:], device=self.device, dtype=dtype) * self.stride[0]  # image size (h,w)
-        anchor_points, stride_tensor = make_anchors(feats, self.stride, 0.5)
+        anchor_points, stride_tensor = make_anchors(feats, self.stride, 0.5)  
+        # 返回list anchorpoints 每个尺度的anchor点坐标和对应的stride 例 [ 0.5000,  0.5000] 到  [39.5000, 39.5000],
+        # 和每个尺度对应的stride [8, 16, 32]，每个尺度的stride是一样的 维度是  6400*2, 1600*2, 400*2 和 6400*1,  1600, 400
 
         # Targets
         targets = torch.cat((batch["batch_idx"].view(-1, 1), batch["cls"].view(-1, 1), batch["bboxes"]), 1)
-        targets = self.preprocess(targets.to(self.device), batch_size, scale_tensor=imgsz[[1, 0, 1, 0]])
+        targets = self.preprocess(targets.to(self.device), batch_size, scale_tensor=imgsz[[1, 0, 1, 0]]) # 将 max*6 维度的target信息
+        # 变成 batch*max*5 维度的target信息
         gt_labels, gt_bboxes = targets.split((1, 4), 2)  # cls, xyxy
-        mask_gt = gt_bboxes.sum(2, keepdim=True).gt_(0.0)
+        mask_gt = gt_bboxes.sum(2, keepdim=True).gt_(0.0) #b*max*1 #通过检测最大值是否为0来确认 是不是有效的target
 
         # Pboxes
-        pred_bboxes = self.bbox_decode(anchor_points, pred_distri)  # xyxy, (b, h*w, 4)
+        pred_bboxes = self.bbox_decode(anchor_points, pred_distri)  # xyxy, (b, h*w, 4) 通过预测一个regmax的distribution的期望来预测相对与anchor points的
+        # 左上角和右下的偏移量
         # dfl_conf = pred_distri.view(batch_size, -1, 4, self.reg_max).detach().softmax(-1)
         # dfl_conf = (dfl_conf.amax(-1).mean(-1) + dfl_conf.amax(-1).amin(-1)) / 2
 
