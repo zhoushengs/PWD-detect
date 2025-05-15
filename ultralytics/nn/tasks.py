@@ -89,6 +89,8 @@ from ultralytics.utils.torch_utils import (
 )
 from ultralytics.nn.extra_modules import (fasternet_t0,fasternet_t0_dw,fasternet_t1_dw,fasternet_t1
                                           )
+from ultralytics.nn.extra_modules import *
+
 
 try:
     import thop
@@ -1057,6 +1059,34 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
         elif m in {fasternet_t0,fasternet_t0_dw,fasternet_t1_dw,fasternet_t1,}:
             m = m(*args)
             c2 = m.channel
+
+        # --------------GOLD-YOLO--------------
+        elif m in {SimFusion_4in, AdvPoolFusion}:
+            c2 = sum(ch[x] for x in f)
+        elif m in {AdvPoolFusion_DW}:
+            c1 = [ch[f[0]],ch[f[-1]]]
+            c2 = c1[0]+c1[1]//2
+            args = [c1,c2]
+        elif m in {SimFusion_3in,SimFusion_3in_DW}:
+            c2 = args[0]
+            if c2 != nc:  # if c2 not equal to number of classes (i.e. for Classify() output)
+                c2 = make_divisible(min(c2, max_channels) * width, 8)
+            args = [[ch[f_] for f_ in f], c2]
+        elif m is IFM:
+            c1 = ch[f]
+            c2 = sum(args[0])
+            args = [c1, *args]
+        elif m in {InjectionMultiSum_Auto_pool,InjectionMultiSum_Auto_pool_dw}:
+            c1 = ch[f[0]]
+            c2 = args[0]
+            args = [c1, *args]
+        elif m is PyramidPoolAgg:
+            c2 = args[0]
+            args = [sum([ch[f_] for f_ in f]), *args]
+        elif m is TopBasicLayer:
+            c2 = sum(args[1])
+        # --------------GOLD-YOLO--------------
+        
         elif m is AIFI:
             args = [ch[f], *args]
         elif m in {HGStem, HGBlock}:
