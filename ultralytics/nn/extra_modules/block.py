@@ -696,7 +696,7 @@ class GOLDYOLO_Attention(torch.nn.Module):
         xx = xx.permute(0, 1, 3, 2).reshape(B, self.dh, H, W)
         xx = self.proj(xx)
         return xx
-from memory_efficient_attention_pytorch import Attention
+#from memory_efficient_attention_pytorch import Attention
 class top_Block(nn.Module):
     
     def __init__(self, dim, key_dim, num_heads, mlp_ratio=4., attn_ratio=2., drop=0.,
