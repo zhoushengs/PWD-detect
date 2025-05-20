@@ -9,13 +9,18 @@ import torch.nn as nn
 from torch.nn.init import constant_, xavier_uniform_
 
 from ultralytics.utils.tal import TORCH_1_10, dist2bbox, dist2rbox, make_anchors
+from ultralytics.utils.ops import xywh2xyxy
 
 from .block import DFL, BNContrastiveHead, ContrastiveHead, Proto
 from .conv import Conv, DWConv
 from .transformer import MLP, DeformableTransformerDecoder, DeformableTransformerDecoderLayer
 from .utils import bias_init_with_prob, linear_init
+from torch import Tensor
+from typing import List
+from torchvision.ops import roi_align
+import torch.nn.functional as F
 
-__all__ = "Detect", "Segment", "Pose", "Classify", "OBB", "RTDETRDecoder", "v10Detect"
+__all__ = "Detect", "Segment", "Pose", "Classify", "OBB", "RTDETRDecoder", "v10Detect","Detect_featureloss"
 
 
 class Detect(nn.Module):
@@ -171,6 +176,150 @@ class Detect(nn.Module):
         i = torch.arange(batch_size)[..., None]  # batch indices
         return torch.cat([boxes[i, index // nc], scores[..., None], (index % nc)[..., None].float()], dim=-1)
 
+class Detect_featureloss(Detect):
+    def __init__(self, nc=80, ch=(),roi_output_size=7):
+        """Initializes the YOLO detection layer with specified number of classes and channels."""
+        ch = ch[1:]
+        super().__init__(nc, ch)
+        self.feature_dim = 128
+        self.hidden_dim = 256
+        self.roi_output_size = roi_output_size
+        # Share the same encoder for both branches
+        self.encoder = nn.Sequential(
+            nn.Conv2d(ch[-1]//2, self.feature_dim, 3, padding=1, bias=False),
+            nn.BatchNorm2d(self.feature_dim),
+            nn.ReLU(inplace=True),
+            nn.AdaptiveAvgPool2d((1,1)),
+            nn.Flatten(),
+            nn.Linear(self.feature_dim, self.hidden_dim, bias=False),
+            nn.BatchNorm1d(self.hidden_dim),
+            nn.ReLU(inplace=True),
+            nn.Linear(self.hidden_dim, self.feature_dim, bias=True),
+        )
+        self.roi_classifier = nn.Linear(self.feature_dim, nc)
+
+    def _extract_roi_encoded_features(self,
+                                      feature_maps_from_backbone: List[torch.Tensor],
+                                      bboxes_abs_img_scale: torch.Tensor,
+                                      batch_indices_for_roi: torch.Tensor,
+                                      current_batch_img_shapes: torch.Tensor,
+                                      encoder: nn.Module):
+        """
+        Extracts RoI features, encodes them, and normalizes.
+        Args:
+            feature_maps_from_neck (List[torch.Tensor]): List of FPN feature maps [P3, P4, P5,...].
+            bboxes_abs_img_scale (torch.Tensor): Absolute GT bounding boxes [N_roi, 4] (xyxy) on original image scale.
+            batch_indices_for_roi (torch.Tensor): Batch index for each RoI [N_roi].
+            current_batch_img_shapes (torch.Tensor): Shapes of images in the current batch [BatchSize, 2] (H, W).
+            encoder (nn.Module): The encoder module (query_encoder or key_encoder).
+        Returns:
+            torch.Tensor: L2-normalized encoded object features [N_roi, feature_dim].
+        """
+        if bboxes_abs_img_scale.numel() == 0:
+            return torch.empty(0, self.feature_dim, device=feature_maps_from_backbone[0].device)
+
+        # Use the P3 feature map (smallest stride, highest resolution) for RoIAlign
+        #selected_feature_map = feature_maps_from_neck
+        _bs, _c_fm, h_fm, w_fm = feature_maps_from_backbone.shape
+
+        # Ensure all tensors are on the same device
+        device = feature_maps_from_backbone.device
+        bboxes_abs_img_scale    = bboxes_abs_img_scale.to(device)
+        batch_indices_for_roi   = batch_indices_for_roi.to(device)
+        current_batch_img_shapes = current_batch_img_shapes.to(device)
+
+        H_img, W_img = current_batch_img_shapes[0].item(), current_batch_img_shapes[1].item()
+        # bboxes_abs_img_scale * [W,H,W,H] → 像素xywh
+        scale_img = torch.tensor([W_img, H_img, W_img, H_img],
+                                 device=device, dtype=bboxes_abs_img_scale.dtype)
+        pixel_xywh = bboxes_abs_img_scale * scale_img  # [N,4]
+        pixel_xyxy = xywh2xyxy(pixel_xywh) 
+
+        norm_xyxy = pixel_xyxy / scale_img        # [N,4]
+        fm_scale = torch.tensor([w_fm, h_fm, w_fm, h_fm], device=device)
+        rois_fm = norm_xyxy * fm_scale  
+
+        rois_fm[:, 0::2].clamp_(0, w_fm - 1)
+        rois_fm[:, 1::2].clamp_(0, h_fm - 1)
+
+        bad_w = rois_fm[:, 2] <= rois_fm[:, 0]
+        rois_fm[bad_w, 2] = rois_fm[bad_w, 0] + 1
+        bad_h = rois_fm[:, 3] <= rois_fm[:, 1]
+        rois_fm[bad_h, 3] = rois_fm[bad_h, 1] + 1
+
+
+        # Scale RoIs from original image coordinates to the selected feature map's coordinates
+        
+        roi_inputs = torch.cat([batch_indices_for_roi.to(device).float(),
+                                rois_fm], dim=1)  # [N,5]
+
+        
+
+
+        # Prepare RoIs for roi_align: [K, 5] (batch_idx_in_feat_map_tensor, x1, y1, x2, y2)
+        roi_inputs = torch.cat([batch_indices_for_roi.float(), rois_fm], dim=1)
+
+        if roi_inputs.numel() == 0: # Should be caught by bboxes_abs_img_scale.numel() == 0 earlier
+             return torch.empty(0, self.feature_dim, device=device)
+
+        # Perform RoI Align
+        patches = roi_align(feature_maps_from_backbone, roi_inputs,
+                            output_size=(self.roi_output_size, self.roi_output_size),
+                            aligned=True) 
+        # roi_aligned_patches shape: [N_roi, c_feat_map_for_roi, self.roi_output_size, self.roi_output_size]
+
+        # Encode the RoI-aligned patches
+        encoded_features = encoder(patches)  # Expected output: [N_roi, self.feature_dim]
+
+        # L2 Normalize the encoded features
+        normalized_features = F.normalize(encoded_features, p=2, dim=1)
+        return normalized_features
+    
+    def forward(self, x, batch=None):
+        """
+        x: tuple of two lists of feature maps => (featsA, featsB)
+        batch: dict with 'labels' tensor of shape [M,6] => (batch_idx, cls, x, y, w, h)
+               and 'img_shapes' tensor [B,2] => (height, width)
+        """
+        featsA, featsB = x[0].chunk(2,dim=1)  # each is List[Tensor] at strides P3,P4,P5
+        
+        # 1) Run standard head to get preds (we ignore branchB preds here)
+        preds = []
+        
+        for i in range(self.nl):  # self.nl is number of detection layers
+            preds.append(torch.cat((self.cv2[i](x[1:][i]), self.cv3[i](x[1:][i])), 1)) # returns list of feature‐concat if training
+
+        # 2) During training, also compute encoded RoI features for each branch
+        if self.training and batch is not None:
+            #labels = batch['bboxes']  # [M,6]
+            # convert xywh→xyxy normalized
+            xywh =  batch['bboxes']
+            x_c, y_c, w, h = xywh.unbind(1)
+            x1, y1 = x_c - w/2, y_c - h/2
+            x2, y2 = x_c + w/2, y_c + h/2
+            bboxes_xyxy = torch.stack([x1, y1, x2, y2], dim=1)  # [M,4]
+            batch_idx = batch['batch_idx'].unsqueeze(1).long()                 # [M]
+        
+            H, W = batch['img'].shape[-2:]
+            img_shapes = torch.tensor([H, W], device=batch['img'].device, dtype=torch.float32)
+            # ...existing code...           # [B,2]
+
+            encA = self._extract_roi_encoded_features(
+                featsA, bboxes_xyxy, batch_idx, img_shapes, encoder=self.encoder
+            )
+            encB = self._extract_roi_encoded_features(
+                featsB, bboxes_xyxy, batch_idx, img_shapes, encoder=self.encoder
+            )
+            # Return preds + both encoded feature sets
+            cls_logits_A = self.roi_classifier(encA)  # [N_roi, nc]
+            cls_logits_B = self.roi_classifier(encB)
+            return preds, (encA, encB, cls_logits_A, cls_logits_B)
+
+        # inference / export: same as base
+        if self.training:
+            return preds
+        y = self._inference(preds)
+        return y if self.export else (y, preds)
 
 class Segment(Detect):
     """YOLO Segment head for segmentation models."""

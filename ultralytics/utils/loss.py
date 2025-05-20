@@ -264,6 +264,41 @@ class v8DetectionLoss:
 
         return loss.sum() * batch_size, loss.detach()  # loss(box, cls, dfl)
 
+class v8DetectionSimLoss(v8DetectionLoss):
+    """v8DetectionLoss + feature‐similarity loss between two branch embeddings."""
+
+    def __init__(self, model):
+        super().__init__(model)
+        # 在 your c1.yaml 中加入 sim_weight 超参
+        self.sim_weight = getattr(model.args, 'sim_weight', 1.0)
+        self.roi_cls_weight = getattr(model.args, 'roi_cls_weight', 1.0)
+
+    def __call__(self, preds, batch):
+        # preds 可能是 (det_preds, (encA, encB))
+        sim_loss = torch.tensor(0.0, device=self.device) 
+        roi_cls_loss = torch.tensor(0.0, device=self.device) 
+        if isinstance(preds, tuple) and len(preds[1]) == 4:
+            det_preds, (encA, encB, cls_logits_A, cls_logits_B) = preds
+        else:
+            super_loss, super_lossitem= super().__call__(preds, batch)
+            return super_loss, torch.cat((super_lossitem, sim_loss.detach()[None],roi_cls_loss.detach()[None]))
+        # 1) 检测损失
+        det_loss, loss_items = super().__call__(det_preds, batch)
+
+        # 2) 相似度损失
+        
+        if encA is not None and encB is not None:
+            sim_loss = F.mse_loss(encA, encB)
+        labels = batch['cls'].view(-1).to(self.device).long()
+        cls_loss_A = F.cross_entropy(cls_logits_A, labels, reduction='mean')
+        cls_loss_B = F.cross_entropy(cls_logits_B, labels, reduction='mean')
+        roi_cls_loss = (cls_loss_A + cls_loss_B) * 0.5
+
+        det_loss = det_loss + self.sim_weight * sim_loss+self.roi_cls_weight * roi_cls_loss
+        # 可选：将 sim_loss 附加到 loss_items 供监控
+        loss_items = torch.cat((loss_items, sim_loss.detach()[None],roi_cls_loss.detach()[None]))  
+
+        return det_loss, loss_items
 
 class v8SegmentationLoss(v8DetectionLoss):
     """Criterion class for computing training losses."""

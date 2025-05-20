@@ -76,7 +76,7 @@ from .conv import (
     WGAFM,
     WGAFMdown,
 )
-from .head import OBB, Classify, Detect, Pose, RTDETRDecoder, Segment, WorldDetect, v10Detect
+from .head import OBB, Classify, Detect, Pose, RTDETRDecoder, Segment, WorldDetect, v10Detect, Detect_featureloss
 from .transformer import (
     AIFI,
     MLP,
@@ -164,4 +164,5 @@ __all__ = (
     "Index",
     "WGAFM",
     "WGAFMdown",
+    "Detect_featureloss"
 )
