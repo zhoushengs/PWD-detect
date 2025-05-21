@@ -33,3 +33,4 @@ runs/
 
 # Dependencies
 node_modules/
+/test.py
