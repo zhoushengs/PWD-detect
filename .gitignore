@@ -178,5 +178,6 @@ train_VisDrone.py
 train_on_cc.py
 *.sh
 
-train.py
+/train.py
 *.pth
+/test.py
