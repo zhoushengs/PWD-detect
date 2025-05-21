@@ -179,14 +179,14 @@ class Detect(nn.Module):
 class Detect_featureloss(Detect):
     def __init__(self, nc=80, ch=(),roi_output_size=7):
         """Initializes the YOLO detection layer with specified number of classes and channels."""
-        ch = ch[1:]
-        super().__init__(nc, ch)
+        d_ch = ch[1:]
+        super().__init__(nc, d_ch)
         self.feature_dim = 128
         self.hidden_dim = 256
         self.roi_output_size = roi_output_size
         # Share the same encoder for both branches
         self.encoder = nn.Sequential(
-            nn.Conv2d(ch[-1]//2, self.feature_dim, 3, padding=1, bias=False),
+            nn.Conv2d(ch[0]//2, self.feature_dim, 3, padding=1, bias=False),
             nn.BatchNorm2d(self.feature_dim),
             nn.ReLU(inplace=True),
             nn.AdaptiveAvgPool2d((1,1)),
