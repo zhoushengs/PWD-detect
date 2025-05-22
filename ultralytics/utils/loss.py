@@ -288,7 +288,9 @@ class v8DetectionSimLoss(v8DetectionLoss):
         # 2) 相似度损失
         
         if encA is not None and encB is not None:
-            sim_loss = F.mse_loss(encA, encB)
+            #sim_loss = F.mse_loss(encA, encB)
+            cos_sim = F.cosine_similarity(encA, encB, dim=1)
+            sim_loss = (1.0 - cos_sim).mean()   
         labels = batch['cls'].view(-1).to(self.device).long()
         cls_loss_A = F.cross_entropy(cls_logits_A, labels, reduction='mean')
         cls_loss_B = F.cross_entropy(cls_logits_B, labels, reduction='mean')
