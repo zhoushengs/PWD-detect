@@ -32,6 +32,27 @@ def write_all_images(image_dir, output_file):
         for img in imgs:
             f.write(f"/images/{img}\n")  # 或者 f"/images/{img}\n"
 
+def check_bbox():
+        from matplotlib import pyplot as plt
+        img = batch['img'][0].detach().cpu()
+    # [C,H,W] → [H,W,C]
+        img = img.permute(1,2,0).numpy()
+        img = img * 255
+        img = img.astype('uint8')
+        b = batch['bboxes'][0].detach().cpu()
+        H, W = img.shape[:2]
+        plt.figure(figsize=(6,6))
+        plt.imshow(img)
+        if b.ndim == 1:
+            b = b.unsqueeze(0)
+        for x_c,y_c,w,h in b:  # 默认 xywh
+            x1 = (x_c - w/2) * W
+            y1 = (y_c - h/2) * H
+            rect = plt.Rectangle((x1,y1), w*W, h*H, fill=False, edgecolor='r', linewidth=2)
+            plt.gca().add_patch(rect)
+        plt.axis('off')
+        plt.show()
+
 if __name__ == '__main__':
     p = argparse.ArgumentParser()
     p.add_argument('-i','--image_dir',default='D:\\Guelph\\data\\sicktree4yolo\\sicktree4yolo\\train\\images', help='图片文件夹路径')

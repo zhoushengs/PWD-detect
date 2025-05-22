@@ -177,7 +177,7 @@ class Detect(nn.Module):
         return torch.cat([boxes[i, index // nc], scores[..., None], (index % nc)[..., None].float()], dim=-1)
 
 class Detect_featureloss(Detect):
-    def __init__(self, nc=80, ch=(),roi_output_size=7):
+    def __init__(self, nc=80, ch=(),roi_output_size=3):
         """Initializes the YOLO detection layer with specified number of classes and channels."""
         d_ch = ch[1:]
         super().__init__(nc, d_ch)
@@ -230,14 +230,14 @@ class Detect_featureloss(Detect):
 
         H_img, W_img = current_batch_img_shapes[0].item(), current_batch_img_shapes[1].item()
         # bboxes_abs_img_scale * [W,H,W,H] → 像素xywh
-        scale_img = torch.tensor([W_img, H_img, W_img, H_img],
-                                 device=device, dtype=bboxes_abs_img_scale.dtype)
-        pixel_xywh = bboxes_abs_img_scale * scale_img  # [N,4]
-        pixel_xyxy = xywh2xyxy(pixel_xywh) 
+        # scale_img = torch.tensor([W_img, H_img, W_img, H_img],
+        #                          device=device, dtype=bboxes_abs_img_scale.dtype)
+        #pixel_xyxy = bboxes_abs_img_scale * scale_img  # [N,4]
+        #pixel_xyxy = xywh2xyxy(pixel_xywh) 
 
-        norm_xyxy = pixel_xyxy / scale_img        # [N,4]
+        #norm_xyxy = pixel_xyxy / scale_img        # [N,4]
         fm_scale = torch.tensor([w_fm, h_fm, w_fm, h_fm], device=device)
-        rois_fm = norm_xyxy * fm_scale  
+        rois_fm = bboxes_abs_img_scale * fm_scale  
 
         rois_fm[:, 0::2].clamp_(0, w_fm - 1)
         rois_fm[:, 1::2].clamp_(0, h_fm - 1)
