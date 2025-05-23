@@ -277,7 +277,7 @@ class v8DetectionSimLoss(v8DetectionLoss):
         # preds 可能是 (det_preds, (encA, encB))
         sim_loss = torch.tensor(0.0, device=self.device) 
         roi_cls_loss = torch.tensor(0.0, device=self.device) 
-        if isinstance(preds, tuple) and len(preds[1]) == 4:
+        if isinstance(preds, tuple) and len(preds[1]) == 4 and preds[1][0].shape[-1] == preds[1][1].shape[-1]:
             det_preds, (encA, encB, cls_logits_A, cls_logits_B) = preds
         else:
             super_loss, super_lossitem= super().__call__(preds, batch)
