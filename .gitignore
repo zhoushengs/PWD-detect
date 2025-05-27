@@ -181,3 +181,5 @@ train_on_cc.py
 /train.py
 *.pth
 /test.py
+/detect.py
+/val.py

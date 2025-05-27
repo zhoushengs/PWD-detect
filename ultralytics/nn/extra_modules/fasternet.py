@@ -316,12 +316,12 @@ class ImprovedCMCE(nn.Module):
         b, c, h, w = fa.size()
         
         # 计算互相关性
-        fa_pool = fa.view(b, c, -1).mean(dim=2).view(b, c, 1, 1)
-        fb_pool = fb.view(b, c, -1).mean(dim=2).view(b, c, 1, 1)
+        #fa_pool = fa.view(b, c, -1).mean(dim=2).view(b, c, 1, 1)
+        #fb_pool = fb.view(b, c, -1).mean(dim=2).view(b, c, 1, 1)
         
         # 计算通道注意力权重
-        wa = self.channel_attention(fa_pool)
-        wb = self.channel_attention(fb_pool)
+        wa = self.channel_attention(fa)
+        wb = self.channel_attention(fb)
         
         # 交叉增强
         fa_enhanced = fa + fb * wa
