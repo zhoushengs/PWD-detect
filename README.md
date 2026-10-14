@@ -1,6 +1,6 @@
 
 
-PWD-detect is a custom computer vision and object detection repository built on top of the [Ultralytics](https://github.com/ultralytics/ultralytics) YOLO framework. It provides end-to-end support for model training, evaluation, inference, and containerized deployment.
+PWD-detect is a custom computer vision and object detection repository for pine wilt disease detection built on top of the [Ultralytics](https://github.com/ultralytics/ultralytics) YOLO framework. It provides end-to-end support for model training, evaluation, inference, and containerized deployment.
 
 
 
